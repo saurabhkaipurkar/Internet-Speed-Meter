@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.TrafficStats;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -30,16 +31,10 @@ public class SpeedService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        new Thread(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    e.printStackTrace();
-                    break;
-                }
-
+        Handler handler = new Handler();
+        Runnable speedUpdateRunnable = new Runnable() {
+            @Override
+            public void run() {
                 long currentRxBytes = TrafficStats.getTotalRxBytes();
                 long currentTxBytes = TrafficStats.getTotalTxBytes();
                 long currentTime = System.currentTimeMillis();
@@ -53,8 +48,14 @@ public class SpeedService extends Service {
 
                 String speedText = "Download: " + formatSpeed(rxSpeed) + " | Upload: " + formatSpeed(txSpeed);
                 showNotification(speedText);
+
+                // Schedule the next update in 1 second
+                handler.postDelayed(this, 1000);
             }
-        }).start();
+        };
+
+        // Start the periodic updates
+        handler.post(speedUpdateRunnable);
 
         return START_STICKY;
     }

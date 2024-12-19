@@ -77,7 +77,7 @@ public class SpeedService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Internet Speed")
                 .setContentText(speedText)
-                .setSmallIcon(android.R.drawable.stat_sys_download)
+                .setSmallIcon(R.drawable.network_check)
                 .setOngoing(true)
                 .build();
         startForeground(1, notification);

@@ -1,5 +1,6 @@
 package com.example.internetspeedmeter;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
@@ -43,6 +44,7 @@ public class FloatingSpeedService extends Service
         }
     }
 
+    @SuppressLint("InflateParams")
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void createFloatingOverlay() {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Internet Speed Meter</string>
+    <string name="speed_text">↓ 0 KB/s | ↑ 0 KB/s</string>
 </resources>

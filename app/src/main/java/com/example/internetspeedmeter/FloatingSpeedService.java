@@ -36,7 +36,7 @@ public class FloatingSpeedService extends Service {
 
     private long previousRxBytes = 0;
     private long previousTxBytes = 0;
-    private long previousTime = 0;
+    private long previousTime = 1;
 
     private final Handler handler = new Handler();
 

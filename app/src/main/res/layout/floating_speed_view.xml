@@ -4,7 +4,8 @@
     android:layout_height="wrap_content"
     android:layout_width="wrap_content"
     android:layout_gravity="center"
-    app:cardCornerRadius="30dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="20dp"
     android:alpha="0.5">
 
     <LinearLayout

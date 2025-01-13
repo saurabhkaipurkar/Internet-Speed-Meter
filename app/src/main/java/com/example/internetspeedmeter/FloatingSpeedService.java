@@ -158,7 +158,7 @@ public class FloatingSpeedService extends Service {
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Internet Speed Meter")
-                .setContentText("Monitoring speed")
+                .setContentText("Monitoring internet speed...")
                 .setSmallIcon(R.drawable.network_check)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .build();

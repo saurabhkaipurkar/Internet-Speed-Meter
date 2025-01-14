@@ -14,6 +14,7 @@ import android.net.TrafficStats;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -21,6 +22,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -47,6 +49,12 @@ public class FloatingSpeedService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        if (!Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "Permission to display over other apps is required.", Toast.LENGTH_LONG).show();
+            stopSelf(); // Stop the service if permission is not granted
+            return;
+        }
 
         IntentFilter filter = new IntentFilter(Intent.ACTION_MAIN);
         filter.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -188,7 +196,6 @@ public class FloatingSpeedService extends Service {
 
         handler.post(speedUpdateRunnable);
     }
-
     public String formatSpeed(long bytesPerSecond) {
         if (bytesPerSecond >= 1024 * 1024) {
             return (bytesPerSecond / (1024 * 1024)) + " MB/s";

@@ -4,16 +4,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.internetspeedmeter.R;
 import com.example.internetspeedmeter.datahandler.DataUsageHandler;
-
 import java.util.List;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
 
 public class DataUsageAdapter extends RecyclerView.Adapter<DataUsageAdapter.DataUsageViewHolder>
 {
@@ -44,23 +39,6 @@ public class DataUsageAdapter extends RecyclerView.Adapter<DataUsageAdapter.Data
     public int getItemCount() {
         return dataUsageList.size();
     }
-
-    private final Handler handler = new Handler() {
-        @Override
-        public void publish(LogRecord record) {
-
-        }
-
-        @Override
-        public void flush() {
-
-        }
-
-        @Override
-        public void close() throws SecurityException {
-
-        }
-    };
     public static class DataUsageViewHolder  extends RecyclerView.ViewHolder
     {
         TextView typeTextView, usageTextView;

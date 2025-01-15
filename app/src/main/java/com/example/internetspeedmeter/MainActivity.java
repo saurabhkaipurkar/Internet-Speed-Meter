@@ -64,11 +64,6 @@ public class MainActivity extends AppCompatActivity
             {
                 Toast.makeText(this, "Please enable 'Display over other apps' permission.", Toast.LENGTH_SHORT).show();
             }
-            else
-            {
-                startFloatingSpeedService();
-                Toast.makeText(MainActivity.this, "Processes Started", Toast.LENGTH_SHORT).show();
-            }
 
         // Check if the app has permission to draw over other apps
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this))
@@ -77,10 +72,6 @@ public class MainActivity extends AppCompatActivity
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                     Uri.parse("package:" + getPackageName()));
             overlayPermissionLauncher.launch(intent);
-        }
-        else
-        {
-            startFloatingSpeedService();
         }
     }
 

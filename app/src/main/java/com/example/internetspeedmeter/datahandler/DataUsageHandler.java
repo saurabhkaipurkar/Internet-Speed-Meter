@@ -1,7 +1,5 @@
 package com.example.internetspeedmeter.datahandler;
 
-import android.net.TrafficStats;
-
 public class DataUsageHandler
 {
     private String type;

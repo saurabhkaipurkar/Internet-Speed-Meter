@@ -39,7 +39,8 @@ public class MainActivity extends AppCompatActivity
 
     @SuppressLint("ObsoleteSdkInt")
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -53,6 +54,7 @@ public class MainActivity extends AppCompatActivity
         DataUsageAdapter adapter = new DataUsageAdapter(dataUsageList);
         recyclerView.setAdapter(adapter);
         startUpdatingRecyclerView(dataUsageList, adapter);
+
         SharedPreferences preferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         boolean isProcessRunning = preferences.getBoolean(KEY_PROCESS_STATE, true);
 
@@ -132,11 +134,11 @@ public class MainActivity extends AppCompatActivity
         {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             {
-                startForegroundService(new Intent(this, FloatingSpeedService.class));
+                startForegroundService(new Intent(this, SpeedService.class));
             }
             else
             {
-                startService(new Intent(this, FloatingSpeedService.class));
+                startService(new Intent(this, SpeedService.class));
             }
         }
     }

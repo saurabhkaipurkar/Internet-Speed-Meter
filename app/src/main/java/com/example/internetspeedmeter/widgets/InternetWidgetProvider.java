@@ -10,7 +10,7 @@ import android.net.TrafficStats;
 import android.os.Handler;
 import android.widget.RemoteViews;
 
-import com.example.internetspeedmeter.FloatingSpeedService;
+import com.example.internetspeedmeter.SpeedService;
 import com.example.internetspeedmeter.MainActivity;
 import com.example.internetspeedmeter.R;
 
@@ -49,7 +49,7 @@ public class InternetWidgetProvider extends AppWidgetProvider
 
                 // Update the widget UI
                 RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_internet_speed);
-                FloatingSpeedService service = new FloatingSpeedService();
+                SpeedService service = new SpeedService();
                 String speedText = "↓ " + service.formatSpeed(rxSpeed) + " | ↑ " + service.formatSpeed(txSpeed);
                 views.setTextViewText(R.id.widget_speed_text,speedText);
 

@@ -23,19 +23,18 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
-public class FloatingSpeedService extends Service {
+public class SpeedService extends Service
+{
     private static final String CHANNEL_ID = "speed_meter_channel";
     private static final int NOTIFICATION_ID = 1;
 
     private WindowManager windowManager;
     private View floatingView;
     private TextView speedTextView;
-
     private long previousRxBytes = 0;
     private long previousTxBytes = 0;
     private long previousTime = 0;
@@ -59,10 +58,6 @@ public class FloatingSpeedService extends Service {
         IntentFilter filter = new IntentFilter(Intent.ACTION_MAIN);
         filter.addCategory(Intent.CATEGORY_LAUNCHER);
         registerReceiver(appReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-
-        previousRxBytes = TrafficStats.getTotalRxBytes();
-        previousTxBytes = TrafficStats.getTotalTxBytes();
-        previousTime = System.currentTimeMillis();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createFloatingOverlay();

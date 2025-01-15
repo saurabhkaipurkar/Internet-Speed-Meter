@@ -2,7 +2,7 @@ package com.example.internetspeedmeter.datahandler;
 
 public class DataUsageHandler
 {
-    private String type;
+    private final String type;
     private String usage;
 
     public DataUsageHandler(String type, String usage)
@@ -13,10 +13,6 @@ public class DataUsageHandler
 
     public String getType() {
         return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public String getUsage() {

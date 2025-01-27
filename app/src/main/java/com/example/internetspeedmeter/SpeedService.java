@@ -27,51 +27,56 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
-public class SpeedService extends Service
-{
+public class SpeedService extends Service {
     private static final String CHANNEL_ID = "speed_meter_channel";
     private static final int NOTIFICATION_ID = 1;
 
     private WindowManager windowManager;
     private View floatingView;
     private TextView speedTextView;
-    private long previousRxBytes = 0;
-    private long previousTxBytes = 0;
-    private long previousTime = 0;
-
     private final Handler handler = new Handler();
 
+    private long previousRxBytes = 0, previousTxBytes = 0, previousTime = 0;
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
 
-    @SuppressLint("InlinedApi")
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     public void onCreate() {
         super.onCreate();
 
         if (!Settings.canDrawOverlays(this)) {
             Toast.makeText(this, "Permission to display over other apps is required.", Toast.LENGTH_LONG).show();
-            stopSelf(); // Stop the service if permission is not granted
+            stopSelf();
             return;
         }
 
+        registerReceiver(appReceiver, createIntentFilter());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) createFloatingOverlay();
+    }
+
+    private IntentFilter createIntentFilter() {
         IntentFilter filter = new IntentFilter(Intent.ACTION_MAIN);
         filter.addCategory(Intent.CATEGORY_LAUNCHER);
-        registerReceiver(appReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createFloatingOverlay();
-        }
+        return filter;
     }
 
     @SuppressLint("InflateParams")
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void createFloatingOverlay() {
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-
         floatingView = LayoutInflater.from(this).inflate(R.layout.floating_speed_view, null);
         speedTextView = floatingView.findViewById(R.id.speedTextView);
 
+        WindowManager.LayoutParams params = createLayoutParams();
+        windowManager.addView(floatingView, params);
+
+        setupTouchListener(params);
+        updateSpeed();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private WindowManager.LayoutParams createLayoutParams() {
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -79,67 +84,51 @@ public class SpeedService extends Service
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT
         );
-
         params.gravity = Gravity.TOP | Gravity.START;
         params.x = 10;
         params.y = 10;
+        return params;
+    }
 
-        windowManager.addView(floatingView, params);
+    @SuppressLint("ClickableViewAccessibility")
+    private void setupTouchListener(WindowManager.LayoutParams params) {
+        floatingView.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    initialX = params.x;
+                    initialY = params.y;
+                    initialTouchX = event.getRawX();
+                    initialTouchY = event.getRawY();
+                    return true;
 
-        floatingView.setOnTouchListener(new View.OnTouchListener() {
-            @SuppressLint("ClickableViewAccessibility")
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                WindowManager.LayoutParams params = (WindowManager.LayoutParams) floatingView.getLayoutParams();
+                case MotionEvent.ACTION_MOVE:
+                    int deltaX = (int) (event.getRawX() - initialTouchX);
+                    int deltaY = (int) (event.getRawY() - initialTouchY);
+                    params.x = clamp(initialX + deltaX, getScreenWidth() - floatingView.getWidth());
+                    params.y = clamp(initialY + deltaY, getScreenHeight() - floatingView.getHeight());
+                    windowManager.updateViewLayout(floatingView, params);
+                    return true;
 
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        initialX = params.x;
-                        initialY = params.y;
-                        initialTouchX = event.getRawX();
-                        initialTouchY = event.getRawY();
-                        return true;
-
-                    case MotionEvent.ACTION_MOVE:
-                        int deltaX = (int) (event.getRawX() - initialTouchX);
-                        int deltaY = (int) (event.getRawY() - initialTouchY);
-
-                        params.x = initialX + deltaX;
-                        params.y = initialY + deltaY;
-
-                        // Get display width and height using DisplayMetrics
-                        DisplayMetrics metrics = new DisplayMetrics();
-                        windowManager.getDefaultDisplay().getMetrics(metrics);
-                        int screenWidth = metrics.widthPixels;
-                        int screenHeight = metrics.heightPixels;
-
-                        floatingView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
-                        int viewWidth = floatingView.getMeasuredWidth();
-                        int viewHeight = floatingView.getMeasuredHeight();
-
-                        // Ensure the view stays within screen boundaries
-                        if (params.x < 0) {
-                            params.x = 0;
-                        } else if (params.x + viewWidth > screenWidth) {
-                            params.x = screenWidth - viewWidth;
-                        }
-
-                        if (params.y < 0) {
-                            params.y = 0;
-                        } else if (params.y + viewHeight > screenHeight) {
-                            params.y = screenHeight - viewHeight;
-                        }
-
-                        windowManager.updateViewLayout(floatingView, params);
-                        return true;
-
-                    default:
-                        return false;
-                }
+                default:
+                    return false;
             }
         });
+    }
 
-        updateSpeed();
+    private int getScreenWidth() {
+        DisplayMetrics metrics = new DisplayMetrics();
+        windowManager.getDefaultDisplay().getMetrics(metrics);
+        return metrics.widthPixels;
+    }
+
+    private int getScreenHeight() {
+        DisplayMetrics metrics = new DisplayMetrics();
+        windowManager.getDefaultDisplay().getMetrics(metrics);
+        return metrics.heightPixels;
+    }
+
+    private int clamp(int value, int max) {
+        return Math.max(0, Math.min(value, max));
     }
 
     @Override
@@ -149,16 +138,7 @@ public class SpeedService extends Service
     }
 
     private Notification createNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Speed Meter Service";
-            String description = "Foreground service for monitoring speed";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) createNotificationChannel();
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Internet Speed Meter")
                 .setContentText("Monitoring internet speed...")
@@ -167,30 +147,48 @@ public class SpeedService extends Service
                 .build();
     }
 
+    private void createNotificationChannel() {
+        NotificationChannel channel = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            channel = new NotificationChannel(
+                    CHANNEL_ID, "Speed Meter Service", NotificationManager.IMPORTANCE_DEFAULT
+            );
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            channel.setDescription("Foreground service for monitoring speed");
+        }
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
     private void updateSpeed() {
-        Runnable speedUpdateRunnable = new Runnable() {
+        handler.post(new Runnable() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void run() {
                 long currentRxBytes = TrafficStats.getTotalRxBytes();
                 long currentTxBytes = TrafficStats.getTotalTxBytes();
                 long currentTime = System.currentTimeMillis();
 
-                long rxSpeed = (currentRxBytes - previousRxBytes) * 1000 / (currentTime - previousTime);
-                long txSpeed = (currentTxBytes - previousTxBytes) * 1000 / (currentTime - previousTime);
+                long rxSpeed = calculateSpeed(currentRxBytes, previousRxBytes, currentTime, previousTime);
+                long txSpeed = calculateSpeed(currentTxBytes, previousTxBytes, currentTime, previousTime);
 
                 previousRxBytes = currentRxBytes;
                 previousTxBytes = currentTxBytes;
                 previousTime = currentTime;
 
-                String speedText = "↓ " + formatSpeed(rxSpeed) + " | ↑ " + formatSpeed(txSpeed);
-                speedTextView.setText(speedText);
-
+                speedTextView.setText("↓ " + formatSpeed(rxSpeed) + " | ↑ " + formatSpeed(txSpeed));
                 handler.postDelayed(this, 1000);
             }
-        };
-
-        handler.post(speedUpdateRunnable);
+        });
     }
+
+    private long calculateSpeed(long currentBytes, long previousBytes, long currentTime, long previousTime) {
+        return (currentBytes - previousBytes) * 1000 / Math.max(1, currentTime - previousTime);
+    }
+
     public String formatSpeed(long bytesPerSecond) {
         if (bytesPerSecond >= 1024 * 1024) {
             return (bytesPerSecond / (1024 * 1024)) + " MB/s";
@@ -204,19 +202,17 @@ public class SpeedService extends Service
     private final BroadcastReceiver appReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (floatingView != null) {
-                windowManager.removeView(floatingView);
-            }
+            if (floatingView != null) windowManager.removeView(floatingView);
         }
     };
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopForeground(true);
         if (floatingView != null) windowManager.removeView(floatingView);
         handler.removeCallbacksAndMessages(null);
         unregisterReceiver(appReceiver);
+        stopForeground(true);
     }
 
     @Nullable

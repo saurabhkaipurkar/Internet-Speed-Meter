@@ -2,9 +2,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:background="@color/white"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:id="@+id/main">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/dataUsageRecyclerView"

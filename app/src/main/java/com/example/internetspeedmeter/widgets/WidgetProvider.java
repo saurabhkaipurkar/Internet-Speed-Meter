@@ -6,15 +6,17 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.TrafficStats;
 import android.os.Handler;
 import android.widget.RemoteViews;
-
 import com.example.internetspeedmeter.SpeedService;
 import com.example.internetspeedmeter.MainActivity;
 import com.example.internetspeedmeter.R;
+import java.text.DecimalFormat;
 
-public class InternetWidgetProvider extends AppWidgetProvider
+public class WidgetProvider extends AppWidgetProvider
 {
     private static final Handler handler = new Handler();
     private static long previousRxBytes = TrafficStats.getTotalRxBytes();
@@ -32,14 +34,28 @@ public class InternetWidgetProvider extends AppWidgetProvider
         startUpdatingSpeed(context, appWidgetManager);
     }
 
-    private void startUpdatingSpeed(Context context, AppWidgetManager appWidgetManager) {
+    private void startUpdatingSpeed(Context context, AppWidgetManager appWidgetManager)
+    {
         Runnable updateSpeedRunnable = new Runnable() {
             @Override
             public void run() {
-                long currentRxBytes = TrafficStats.getTotalRxBytes();
-                long currentTxBytes = TrafficStats.getTotalTxBytes();
-                long currentTime = System.currentTimeMillis();
+                String networkType = getNetworkType(context);
 
+                long currentRxBytes;
+                long currentTxBytes;
+
+                if ("Mobile Data".equals(networkType)) {
+                    currentRxBytes = TrafficStats.getMobileRxBytes();
+                    currentTxBytes = TrafficStats.getMobileTxBytes();
+                } else if ("Wi-Fi".equals(networkType)) {
+                    currentRxBytes = TrafficStats.getTotalRxBytes() - TrafficStats.getMobileRxBytes();
+                    currentTxBytes = TrafficStats.getTotalTxBytes() - TrafficStats.getMobileTxBytes();
+                } else {
+                    currentRxBytes = 0;
+                    currentTxBytes = 0;
+                }
+
+                long currentTime = System.currentTimeMillis();
                 long rxSpeed = (currentRxBytes - previousRxBytes) * 1000 / (currentTime - previousTime);
                 long txSpeed = (currentTxBytes - previousTxBytes) * 1000 / (currentTime - previousTime);
 
@@ -53,8 +69,18 @@ public class InternetWidgetProvider extends AppWidgetProvider
                 String speedText = "↓ " + service.formatSpeed(rxSpeed) + " | ↑ " + service.formatSpeed(txSpeed);
                 views.setTextViewText(R.id.widget_speed_text,speedText);
 
+                if (rxSpeed < 5000) {
+                    views.setTextColor(R.id.widget_speed_text, 0xFFFF0000); // Red for slow speed
+                } else {
+                    views.setTextColor(R.id.widget_speed_text, 0xFF00FF00); // Green for normal speed
+                }
 
-                ComponentName widget = new ComponentName(context, InternetWidgetProvider.class);
+                views.setTextViewText(R.id.widget_network_type, networkType);
+
+                String dataUsage = "Data: " + formatDataUsage(currentRxBytes + currentTxBytes);
+                views.setTextViewText(R.id.widget_data_usage, dataUsage);
+
+                ComponentName widget = new ComponentName(context, WidgetProvider.class);
                 appWidgetManager.updateAppWidget(widget, views);
 
                 // Schedule the next update
@@ -63,6 +89,29 @@ public class InternetWidgetProvider extends AppWidgetProvider
         };
 
         handler.post(updateSpeedRunnable);
+    }
+
+    private String getNetworkType(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        if (activeNetwork != null) {
+            if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
+                return "Wi-Fi";
+            } else if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
+                return "Mobile Data";
+            }
+        }
+        return "No Connection";
+    }
+
+    private String formatDataUsage(long bytes) {
+        DecimalFormat df = new DecimalFormat("0.00");
+        double kb = bytes / 1024.0;
+        double mb = kb / 1024.0;
+        double gb = mb / 1024.0;
+        if (gb > 1) return df.format(gb) + " GB";
+        if (mb > 1) return df.format(mb) + " MB";
+        return df.format(kb) + " KB";
     }
 
     @Override

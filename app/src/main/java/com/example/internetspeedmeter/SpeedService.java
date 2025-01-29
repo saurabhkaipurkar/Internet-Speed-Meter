@@ -27,7 +27,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
-public class SpeedService extends Service {
+public class SpeedService extends Service
+{
     private static final String CHANNEL_ID = "speed_meter_channel";
     private static final int NOTIFICATION_ID = 1;
 
@@ -39,6 +40,7 @@ public class SpeedService extends Service {
     private long previousRxBytes = 0, previousTxBytes = 0, previousTime = 0;
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
+    private String speedtext;
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
@@ -64,6 +66,8 @@ public class SpeedService extends Service {
     @SuppressLint("InflateParams")
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void createFloatingOverlay() {
+        if (floatingView != null) return; // Prevent multiple floating views
+
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         floatingView = LayoutInflater.from(this).inflate(R.layout.floating_speed_view, null);
         speedTextView = floatingView.findViewById(R.id.speedTextView);
@@ -138,28 +142,27 @@ public class SpeedService extends Service {
     }
 
     private Notification createNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) createNotificationChannel();
+        createNotificationChannel();
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Internet Speed Meter")
-                .setContentText("Monitoring internet speed...")
+                .setContentText("Monitoring internet speed... "+speedtext)
                 .setSmallIcon(R.drawable.network_check)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .build();
     }
 
     private void createNotificationChannel() {
-        NotificationChannel channel = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            channel = new NotificationChannel(
-                    CHANNEL_ID, "Speed Meter Service", NotificationManager.IMPORTANCE_DEFAULT
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Speed Meter Service",
+                    NotificationManager.IMPORTANCE_LOW
             );
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             channel.setDescription("Foreground service for monitoring speed");
-        }
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notificationManager.createNotificationChannel(channel);
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
         }
     }
 
@@ -179,14 +182,17 @@ public class SpeedService extends Service {
                 previousTxBytes = currentTxBytes;
                 previousTime = currentTime;
 
-                speedTextView.setText("↓ " + formatSpeed(rxSpeed) + " | ↑ " + formatSpeed(txSpeed));
+                speedtext = ("↓ " + formatSpeed(rxSpeed) + " | ↑ " + formatSpeed(txSpeed));
+                speedTextView.setText(speedtext);
                 handler.postDelayed(this, 1000);
             }
         });
     }
 
     private long calculateSpeed(long currentBytes, long previousBytes, long currentTime, long previousTime) {
-        return (currentBytes - previousBytes) * 1000 / Math.max(1, currentTime - previousTime);
+        long elapsedTime = Math.max(1, currentTime - previousTime); // Prevent division by zero
+        long speed = (currentBytes - previousBytes) * 1000 / elapsedTime;
+        return Math.max(0, speed); // Prevent negative values
     }
 
     public String formatSpeed(long bytesPerSecond) {
@@ -202,14 +208,20 @@ public class SpeedService extends Service {
     private final BroadcastReceiver appReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (floatingView != null) windowManager.removeView(floatingView);
+            if (floatingView != null) {
+                windowManager.removeView(floatingView);
+                floatingView = null;
+            }
         }
     };
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (floatingView != null) windowManager.removeView(floatingView);
+        if (floatingView != null) {
+            windowManager.removeView(floatingView);
+            floatingView = null;
+        }
         handler.removeCallbacksAndMessages(null);
         unregisterReceiver(appReceiver);
         stopForeground(true);

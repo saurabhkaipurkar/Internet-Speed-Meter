@@ -5,4 +5,7 @@
     <string name="on_off">ON / OFF</string>
     <string name="type">Type</string>
     <string name="usage">Usage</string>
+    <string name="data_0_kb">Data: 0 KB</string>
+    <string name="network_unknown">Network: Unknown</string>
+    <string name="internet_speed_widget">Internet Speed Widget</string>
 </resources>

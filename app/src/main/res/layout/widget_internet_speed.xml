@@ -1,8 +1,8 @@
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="220dp"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="@drawable/gradient_background"
+    android:background="@color/teal_dark"
     android:padding="12dp">
 
     <LinearLayout
@@ -19,7 +19,8 @@
             android:gravity="center"
             android:text="@string/network_unknown"
             android:textAppearance="?android:textAppearanceSmall"
-            android:textColor="#333333" />
+            android:textSize="20sp"
+            android:textColor="@color/contrast_white" />
 
         <TextView
             android:id="@+id/widget_data_usage"
@@ -28,8 +29,9 @@
             android:layout_marginTop="2dp"
             android:gravity="center"
             android:text="@string/data_0_kb"
+            android:textSize="20sp"
             android:textAppearance="?android:textAppearanceSmall"
-            android:textColor="#333333" />
+            android:textColor="@color/contrast_white" />
 
         <TextView
             android:id="@+id/widget_speed_text"
@@ -38,7 +40,8 @@
             android:layout_marginTop="4dp"
             android:gravity="center"
             android:text=""
+            android:textSize="20sp"
             android:textAppearance="?android:textAppearanceMedium"
-            android:textColor="@android:color/black" />
+            android:textColor="@color/contrast_white" />
     </LinearLayout>
 </FrameLayout>

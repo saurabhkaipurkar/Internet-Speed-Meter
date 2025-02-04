@@ -137,15 +137,15 @@ public class SpeedService extends Service
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        startForeground(NOTIFICATION_ID, createNotification());
+        startForeground(NOTIFICATION_ID, createNotification(speedtext));
         return START_STICKY;
     }
 
-    private Notification createNotification() {
+    private Notification createNotification(String speed) {
         createNotificationChannel();
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Internet Speed Meter")
-                .setContentText("Monitoring internet speed... "+speedtext)
+                .setContentTitle("Internet Speed Meter App")
+                .setContentText("Monitoring Speed\n"+ speed)
                 .setSmallIcon(R.drawable.network_check)
                 .build();
     }
@@ -183,8 +183,9 @@ public class SpeedService extends Service
                 previousTime = currentTime;
 
                 speedtext = ("↓ " + formatSpeed(rxSpeed) + " | ↑ " + formatSpeed(txSpeed));
+                startForeground(NOTIFICATION_ID,createNotification(speedtext));
                 speedTextView.setText(speedtext);
-                handler.postDelayed(this, 1000);
+                handler.postDelayed(this, 2000);
             }
         });
     }

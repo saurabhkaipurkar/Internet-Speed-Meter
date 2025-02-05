@@ -12,7 +12,6 @@ import android.net.NetworkInfo;
 import android.net.TrafficStats;
 import android.os.Handler;
 import android.widget.RemoteViews;
-import com.example.internetspeedmeter.SpeedService;
 import com.example.internetspeedmeter.MainActivity;
 import com.example.internetspeedmeter.R;
 import java.text.DecimalFormat;
@@ -154,9 +153,8 @@ public class WidgetProvider extends AppWidgetProvider
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_internet_speed);
 
-        // Set up a click listener to launch the main app when the widget is clicked
         Intent intent = new Intent(context, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widget_root_layout, pendingIntent);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);

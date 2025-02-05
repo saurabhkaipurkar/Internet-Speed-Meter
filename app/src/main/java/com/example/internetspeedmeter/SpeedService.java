@@ -36,7 +36,6 @@ public class SpeedService extends Service
     private View floatingView;
     private TextView speedTextView;
     private final Handler handler = new Handler();
-
     private long previousRxBytes = 0, previousTxBytes = 0, previousTime = 0;
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
@@ -145,8 +144,9 @@ public class SpeedService extends Service
         createNotificationChannel();
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Internet Speed Meter App")
-                .setContentText("Monitoring Speed\n"+ speed)
+                .setContentText("Monitoring Speed \n"+ speed)
                 .setSmallIcon(R.drawable.network_check)
+                .setOnlyAlertOnce(true)
                 .build();
     }
 

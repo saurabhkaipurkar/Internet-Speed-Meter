@@ -11,5 +11,6 @@
     <string name="network_type_description">Displays the current network type</string>
     <string name="data_usage_description">Shows the current data usage</string>
     <string name="speed_text_description">Shows the current network speed</string>
+    <string name="network_speed">Network Speed</string>
 
 </resources>

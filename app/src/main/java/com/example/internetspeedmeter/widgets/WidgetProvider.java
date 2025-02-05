@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.TrafficStats;
@@ -19,12 +20,16 @@ import java.text.DecimalFormat;
 public class WidgetProvider extends AppWidgetProvider
 {
     private static final Handler handler = new Handler();
-    private static long previousRxBytes = TrafficStats.getTotalRxBytes();
-    private static long previousTxBytes = TrafficStats.getTotalTxBytes();
-    private static long previousTime = System.currentTimeMillis();
+    private static long previousRxBytes;
+    private static long previousTxBytes;
+    private static long previousTime;
+
+    private static final String PREF_NAME = "WidgetPrefs";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        loadTrafficData(context);
+
         // Update all widgets
         for (int appWidgetId : appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId);
@@ -34,8 +39,9 @@ public class WidgetProvider extends AppWidgetProvider
         startUpdatingSpeed(context, appWidgetManager);
     }
 
-    private void startUpdatingSpeed(Context context, AppWidgetManager appWidgetManager)
-    {
+    private void startUpdatingSpeed(Context context, AppWidgetManager appWidgetManager) {
+        handler.removeCallbacksAndMessages(null); // Clear previous handler callbacks
+
         Runnable updateSpeedRunnable = new Runnable() {
             @Override
             public void run() {
@@ -56,8 +62,8 @@ public class WidgetProvider extends AppWidgetProvider
                 }
 
                 long currentTime = System.currentTimeMillis();
-                long rxSpeed = (currentRxBytes - previousRxBytes) * 1000 / (currentTime - previousTime);
-                long txSpeed = (currentTxBytes - previousTxBytes) * 1000 / (currentTime - previousTime);
+                long rxSpeed = Math.max(0, (currentRxBytes - previousRxBytes) * 1000 / (currentTime - previousTime));
+                long txSpeed = Math.max(0, (currentTxBytes - previousTxBytes) * 1000 / (currentTime - previousTime));
 
                 previousRxBytes = currentRxBytes;
                 previousTxBytes = currentTxBytes;
@@ -65,9 +71,8 @@ public class WidgetProvider extends AppWidgetProvider
 
                 // Update the widget UI
                 RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_internet_speed);
-                SpeedService service = new SpeedService();
-                String speedText = "↓ " + service.formatSpeed(rxSpeed) + " | ↑ " + service.formatSpeed(txSpeed);
-                views.setTextViewText(R.id.widget_speed_text,speedText);
+                String speedText = "↓ " + formatSpeed(rxSpeed) + " | ↑ " + formatSpeed(txSpeed);
+                views.setTextViewText(R.id.widget_speed_text, speedText);
 
                 if (rxSpeed < 5000) {
                     views.setTextColor(R.id.widget_speed_text, 0xFFFF0000); // Red for slow speed
@@ -83,6 +88,8 @@ public class WidgetProvider extends AppWidgetProvider
                 ComponentName widget = new ComponentName(context, WidgetProvider.class);
                 appWidgetManager.updateAppWidget(widget, views);
 
+                saveTrafficData(context, currentRxBytes, currentTxBytes, currentTime);
+
                 // Schedule the next update
                 handler.postDelayed(this, 1000);
             }
@@ -90,7 +97,15 @@ public class WidgetProvider extends AppWidgetProvider
 
         handler.post(updateSpeedRunnable);
     }
-
+    private String formatSpeed(long bytesPerSecond) {
+        if (bytesPerSecond >= 1024 * 1024) {
+            return (bytesPerSecond / (1024 * 1024)) + " MB/s";
+        } else if (bytesPerSecond >= 1024) {
+            return (bytesPerSecond / 1024) + " KB/s";
+        } else {
+            return bytesPerSecond + " B/s";
+        }
+    }
     private String getNetworkType(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
@@ -103,7 +118,6 @@ public class WidgetProvider extends AppWidgetProvider
         }
         return "No Connection";
     }
-
     private String formatDataUsage(long bytes) {
         DecimalFormat df = new DecimalFormat("0.00");
         double kb = bytes / 1024.0;
@@ -113,28 +127,37 @@ public class WidgetProvider extends AppWidgetProvider
         if (mb > 1) return df.format(mb) + " MB";
         return df.format(kb) + " KB";
     }
-
+    private void saveTrafficData(Context context, long rx, long tx, long time) {
+        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putLong("rxBytes", rx)
+                .putLong("txBytes", tx)
+                .putLong("previousTime", time)
+                .apply();
+    }
+    private void loadTrafficData(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        previousRxBytes = prefs.getLong("rxBytes", TrafficStats.getTotalRxBytes());
+        previousTxBytes = prefs.getLong("txBytes", TrafficStats.getTotalTxBytes());
+        previousTime = prefs.getLong("previousTime", System.currentTimeMillis());
+    }
     @Override
     public void onDeleted(Context context, int[] appWidgetIds) {
-        // Stop updates when the widget is deleted
         handler.removeCallbacksAndMessages(null);
         super.onDeleted(context, appWidgetIds);
     }
-
     @Override
     public void onDisabled(Context context) {
-        // Stop updates when the last widget is disabled
         handler.removeCallbacksAndMessages(null);
         super.onDisabled(context);
     }
-
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_internet_speed);
 
         // Set up a click listener to launch the main app when the widget is clicked
         Intent intent = new Intent(context, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-        views.setOnClickPendingIntent(R.id.widget_speed_text, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_root_layout, pendingIntent);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }

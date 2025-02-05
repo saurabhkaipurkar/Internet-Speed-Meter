@@ -196,7 +196,7 @@ public class SpeedService extends Service
         return Math.max(0, speed); // Prevent negative values
     }
 
-    public String formatSpeed(long bytesPerSecond) {
+    private String formatSpeed(long bytesPerSecond) {
         if (bytesPerSecond >= 1024 * 1024) {
             return (bytesPerSecond / (1024 * 1024)) + " MB/s";
         } else if (bytesPerSecond >= 1024) {

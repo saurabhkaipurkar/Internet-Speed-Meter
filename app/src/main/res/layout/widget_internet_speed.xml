@@ -2,15 +2,15 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="@color/teal_dark"
-    android:padding="12dp">
+    android:background="@color/contrast_white">
 
     <LinearLayout
-        android:layout_width="195dp"
+        android:id="@+id/widget_root_layout"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="12dp">
 
         <TextView
             android:id="@+id/widget_network_type"
@@ -20,7 +20,8 @@
             android:text="@string/network_unknown"
             android:textAppearance="?android:textAppearanceSmall"
             android:textSize="20sp"
-            android:textColor="@color/contrast_white" />
+            android:textColor="@color/purple_700"
+            android:contentDescription="@string/network_type_description" />
 
         <TextView
             android:id="@+id/widget_data_usage"
@@ -31,7 +32,8 @@
             android:text="@string/data_0_kb"
             android:textSize="20sp"
             android:textAppearance="?android:textAppearanceSmall"
-            android:textColor="@color/contrast_white" />
+            android:textColor="@color/purple_700"
+            android:contentDescription="@string/data_usage_description" />
 
         <TextView
             android:id="@+id/widget_speed_text"
@@ -42,6 +44,7 @@
             android:text=""
             android:textSize="20sp"
             android:textAppearance="?android:textAppearanceMedium"
-            android:textColor="@color/contrast_white" />
+            android:textColor="@color/purple_700"
+            android:contentDescription="@string/speed_text_description" />
     </LinearLayout>
 </FrameLayout>

@@ -14,6 +14,8 @@ import android.os.Handler;
 import android.widget.RemoteViews;
 import com.example.internetspeedmeter.MainActivity;
 import com.example.internetspeedmeter.R;
+import com.example.internetspeedmeter.util.SpeedCalculator;
+
 import java.text.DecimalFormat;
 
 public class WidgetProvider extends AppWidgetProvider
@@ -22,9 +24,7 @@ public class WidgetProvider extends AppWidgetProvider
     private static long previousRxBytes;
     private static long previousTxBytes;
     private static long previousTime;
-
     private static final String PREF_NAME = "WidgetPrefs";
-
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         loadTrafficData(context);
@@ -40,7 +40,6 @@ public class WidgetProvider extends AppWidgetProvider
 
     private void startUpdatingSpeed(Context context, AppWidgetManager appWidgetManager) {
         handler.removeCallbacksAndMessages(null); // Clear previous handler callbacks
-
         Runnable updateSpeedRunnable = new Runnable() {
             @Override
             public void run() {
@@ -48,6 +47,7 @@ public class WidgetProvider extends AppWidgetProvider
 
                 long currentRxBytes;
                 long currentTxBytes;
+                long currentTime = System.currentTimeMillis();
 
                 if ("Mobile Data".equals(networkType)) {
                     currentRxBytes = TrafficStats.getMobileRxBytes();
@@ -60,9 +60,8 @@ public class WidgetProvider extends AppWidgetProvider
                     currentTxBytes = 0;
                 }
 
-                long currentTime = System.currentTimeMillis();
-                long rxSpeed = Math.max(0, (currentRxBytes - previousRxBytes) * 1000 / (currentTime - previousTime));
-                long txSpeed = Math.max(0, (currentTxBytes - previousTxBytes) * 1000 / (currentTime - previousTime));
+                long rxSpeed = calculateSpeed(currentRxBytes, previousRxBytes, currentTime, previousTime);
+                long txSpeed = calculateSpeed(currentTxBytes, previousTxBytes, currentTime, previousTime);
 
                 previousRxBytes = currentRxBytes;
                 previousTxBytes = currentTxBytes;
@@ -70,7 +69,7 @@ public class WidgetProvider extends AppWidgetProvider
 
                 // Update the widget UI
                 RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_internet_speed);
-                String speedText = "↓ " + formatSpeed(rxSpeed) + " | ↑ " + formatSpeed(txSpeed);
+                String speedText = "↓ " + SpeedCalculator.formatSpeed(rxSpeed) + " | ↑ " + SpeedCalculator.formatSpeed(txSpeed);
                 views.setTextViewText(R.id.widget_speed_text, speedText);
 
                 if (rxSpeed < 5000) {
@@ -93,18 +92,15 @@ public class WidgetProvider extends AppWidgetProvider
                 handler.postDelayed(this, 1000);
             }
         };
-
         handler.post(updateSpeedRunnable);
     }
-    private String formatSpeed(long bytesPerSecond) {
-        if (bytesPerSecond >= 1024 * 1024) {
-            return (bytesPerSecond / (1024 * 1024)) + " MB/s";
-        } else if (bytesPerSecond >= 1024) {
-            return (bytesPerSecond / 1024) + " KB/s";
-        } else {
-            return bytesPerSecond + " B/s";
-        }
+
+    private long calculateSpeed(long currentBytes, long previousBytes, long currentTime, long previousTime) {
+        long elapsedTime = Math.max(1, currentTime - previousTime); // Prevent division by zero
+        long speed = (currentBytes - previousBytes) * 1000 / elapsedTime;
+        return Math.max(0, speed); // Prevent negative values
     }
+
     private String getNetworkType(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
@@ -154,9 +150,8 @@ public class WidgetProvider extends AppWidgetProvider
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_internet_speed);
 
         Intent intent = new Intent(context, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent,PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widget_root_layout, pendingIntent);
-
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 }

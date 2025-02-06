@@ -2,10 +2,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="@color/contrast_white">
+    android:background="@color/contrast_white"
+    android:id="@+id/widget_root_layout">
 
     <LinearLayout
-        android:id="@+id/widget_root_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"

@@ -1,7 +1,6 @@
 package com.example.internetspeedmeter.util;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.Gravity;

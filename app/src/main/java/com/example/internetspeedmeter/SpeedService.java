@@ -17,8 +17,8 @@ import com.example.internetspeedmeter.util.NotificationHelper;
 import com.example.internetspeedmeter.util.SpeedCalculator;
 import com.example.internetspeedmeter.util.WindowManagerHelper;
 
-public class SpeedService extends Service
-{
+public class SpeedService extends Service {
+
     private static final int NOTIFICATION_ID = 1;
     private WindowManager windowManager;
     private View floatingView;
@@ -38,6 +38,11 @@ public class SpeedService extends Service
             return;
         }
 
+        initializeFloatingView();
+    }
+
+    @SuppressLint("InflateParams")
+    private void initializeFloatingView() {
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         floatingView = LayoutInflater.from(this).inflate(R.layout.floating_speed_view, null);
         speedTextView = floatingView.findViewById(R.id.speedTextView);
@@ -71,7 +76,7 @@ public class SpeedService extends Service
                 previousTxBytes = currentTxBytes;
                 previousTime = currentTime;
 
-                speedtext = ("↓ " + SpeedCalculator.formatSpeed(rxSpeed) + " | ↑ " + SpeedCalculator.formatSpeed(txSpeed));
+                speedtext = (" ↓ " + SpeedCalculator.formatSpeed(rxSpeed) + " | ↑ " + SpeedCalculator.formatSpeed(txSpeed));
                 startForeground(NOTIFICATION_ID, NotificationHelper.createNotification(SpeedService.this, speedtext));
                 speedTextView.setText(speedtext);
                 handler.postDelayed(this, 2000);
@@ -82,6 +87,10 @@ public class SpeedService extends Service
     @Override
     public void onDestroy() {
         super.onDestroy();
+        cleanUpFloatingView();
+    }
+
+    private void cleanUpFloatingView() {
         if (floatingView != null) {
             windowManager.removeView(floatingView);
             floatingView = null;
@@ -89,6 +98,7 @@ public class SpeedService extends Service
         handler.removeCallbacksAndMessages(null);
         stopForeground(true);
     }
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

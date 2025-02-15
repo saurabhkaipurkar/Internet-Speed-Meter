@@ -2,14 +2,19 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:background="@color/white"
+    android:orientation="vertical"
     android:padding="16dp"
-    android:id="@+id/main">
+    android:gravity="center"
+    android:background="@drawable/gradient_bg">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/dataUsageRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
+        android:layout_height="match_parent"
+        android:alpha="0.5"
+        android:padding="8dp"
+        android:background="@drawable/card_bg"
+        android:clipToPadding="false"
+        android:overScrollMode="never"/>
 </LinearLayout>
+

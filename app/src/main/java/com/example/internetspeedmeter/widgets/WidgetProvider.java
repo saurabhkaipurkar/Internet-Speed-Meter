@@ -15,6 +15,7 @@ import android.os.Handler;
 import android.widget.RemoteViews;
 import com.example.internetspeedmeter.MainActivity;
 import com.example.internetspeedmeter.R;
+import com.example.internetspeedmeter.util.NetworkMonitor;
 import com.example.internetspeedmeter.util.SpeedCalculator;
 
 import java.text.DecimalFormat;
@@ -25,21 +26,20 @@ public class WidgetProvider extends AppWidgetProvider {
     private static long previousTxBytes;
     private static long previousTime;
     private static final String PREF_NAME = "WidgetPrefs";
+    NetworkMonitor networkMonitor;
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         loadTrafficData(context);
-
         // Update all widgets
         for (int appWidgetId : appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId);
         }
-
         // Start updating speed dynamically
         startUpdatingSpeed(context, appWidgetManager);
     }
 
-    private static String getNetworkType(Context context) {
+    public static String getNetworkType(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager == null) return "No Connection";
 
@@ -53,10 +53,6 @@ public class WidgetProvider extends AppWidgetProvider {
             return "Wi-Fi";
         } else if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
             return "Mobile Data";
-        } else if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
-            return "Ethernet";
-        } else if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)) {
-            return "Bluetooth";
         } else {
             // Fallback for older Android versions
             android.net.NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
@@ -67,7 +63,6 @@ public class WidgetProvider extends AppWidgetProvider {
         }
         return "Unknown Network";
     }
-
     private void startUpdatingSpeed(Context context, AppWidgetManager appWidgetManager) {
         handler.removeCallbacksAndMessages(null); // Clear previous handler callbacks
 
@@ -100,7 +95,7 @@ public class WidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.widget_network_type, "Network: " + networkType);
 
                 // Schedule the next update
-                handler.postDelayed(this, 2000);
+                handler.postDelayed(this, 1000);
             }
         };
         handler.post(updateSpeedRunnable);
@@ -136,9 +131,16 @@ public class WidgetProvider extends AppWidgetProvider {
         handler.removeCallbacksAndMessages(null);
         super.onDeleted(context, appWidgetIds);
     }
-
+    @Override
+    public void onEnabled(Context context) {
+        NetworkMonitor networkMonitor = new NetworkMonitor(context);
+        networkMonitor.register();
+    }
     @Override
     public void onDisabled(Context context) {
+        if (networkMonitor != null) {
+            networkMonitor.unregister();
+        }
         handler.removeCallbacksAndMessages(null);
         super.onDisabled(context);
     }
